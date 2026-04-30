@@ -22,6 +22,7 @@ else
     exit 1
 fi
 
+#Remove and recreate the chapters directory
 rm -rf chapters
 mkdir chapters
 
