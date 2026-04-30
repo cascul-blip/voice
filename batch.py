@@ -46,10 +46,11 @@ def main():
     # Generate output filename (same name as input but .wav)
     output_file = input_path.with_suffix(".wav")
 
-    # Optional: Let user choose voice
-    ##voice = input("Enter voice name (press Enter for am_michael): ").strip()
-    ##if not voice:
-    voice = "af_bella"
+    # Get voice from command line argument or use default
+    if len(sys.argv) > 2:
+        voice = sys.argv[2]
+    else:
+        voice = "am_michael"
 
     # Convert to audio
     save_as_audio(text, str(output_file), voice)
