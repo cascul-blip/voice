@@ -33,7 +33,7 @@ cd chapters
 for file in *; do
     # Check if the item is a file (and not a directory)
     if [ -f "$file" ]; then
-        # echo "Processing $file..."
+        # echo "Processing $file ===> $voice_choice"
         python ../batch.py "$file" "$voice_choice"
         echo "󱔸 Processed the file, waiting for cooldown..."
         sleep 2
