@@ -8,6 +8,13 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+
+# Option to change the voice
+read -p "Enter voice name (press Enter for am_michael): " voice_choice
+if [ -z "$voice_choice" ]; then
+    voice_choice="am_michael"
+fi
+
 if [[ -f "$1" ]]; then
     echo "✅ Success: $1 is an existing file."
 else
@@ -26,8 +33,7 @@ for file in *; do
     # Check if the item is a file (and not a directory)
     if [ -f "$file" ]; then
         # echo "Processing $file..."
-        python ../batch.py "$file"
-        # read -p "Completed $file . Press a key to continue..."
+        python ../batch.py "$file" "$voice_choice"
         echo "󱔸 Processed the file, waiting for cooldown..."
         sleep 2
     fi
