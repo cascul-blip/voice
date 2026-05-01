@@ -16,7 +16,7 @@ if [ -z "$voice_choice" ]; then
     voice_choice="am_michael"
 fi
 
-# Check if argument is a valid, existing file before proceeding
+# Check if the file exists before proceeding
 if [ ! -f "$1" ]; then
     echo "❌ Failure: '$1' does not exist or is not a regular file. Please check the path."
     exit 1
@@ -30,9 +30,8 @@ mkdir chapters
 # Split the epub into text files by chapter
 python epub_to_chapters.py "$1"
 
-# Explicitly process files within 'chapters' directory without changing working directory (cd)
 for file in chapters/*; do
-    # Check if the item is a regular file and exists
+    # Check if the item is a regular file and not a directory
     if [ -f "$file" ]; then
         echo "Processing $(basename "$file") ===> $voice_choice"
         python batch.py "$file" "$voice_choice"
@@ -41,18 +40,10 @@ for file in chapters/*; do
     fi
 done
 
-# NEXT -- MOVE TO A FOLDER AND CONVERT
-echo "󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈"
-# NEXT -- MOVE TO A FOLDER AND CONVERT
 echo "󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈"
 echo "Proccessing into wav files completed."
-
-# 1. Prompt and capture input safely
 read -p "What directory should this be placed in?:" user_input_dir
 
-echo "Entered '$user_input_dir'"
-
-# 2. Check for empty input (Using the variable name instead of 'lin')
 if [ -z "$user_input_dir" ]; then
    echo "Directory not entered, skipping conversion."
    exit 1
@@ -60,7 +51,6 @@ fi
 
 TARGET_DIR="./$user_input_dir" # Use local pathing relative to script execution location
 
-# 3. Attempt to create the directory AND check for errors (The critical fix)
 if ! mkdir -p "$TARGET_DIR"; then
     echo "ERROR: Could not create directory '$user_input_dir'. Check permissions or name validity."
     exit 1
