@@ -15,10 +15,9 @@ if [ -z "$voice_choice" ]; then
     voice_choice="am_michael"
 fi
 
-if [[ -f "$1" ]]; then
-    echo "✅ Success: $1 is an existing file."
-else
-    echo "❌ Failure: $1 does not exist or is not a regular file."
+# Check if argument is a valid, existing file before proceeding
+if [ ! -f "$1" ]; then
+    echo "❌ Failure: '$1' does not exist or is not a regular file. Please check the path."
     exit 1
 fi
 
@@ -69,14 +68,25 @@ else
     exit 1
 fi
 
-# 4. Change directory only IF the previous commands succeeded
-if cd "$TARGET_DIR"; then
-    echo "Successfully moved into directory: $(pwd)" # Prints the full path of the current working directory
-else
-    # This handles failure during the 'cd' step (very rare, but good practice)
-    echo "CRITICAL ERROR: Failed to change into '$user_input_dir'."
-    exit 1
-fi
+# Perform all subsequent operations inside the target directory context without using 'cd' for movement.
+# Use subshell execution or explicit relative pathing to maintain script safety and clean state.
+
+echo "Moving into '$user_input_dir' context for final processing..."
+
+# Copy files from chapters directly into the new TARGET_DIR
+cp -v ../chapters/*.wav "$TARGET_DIR"/ 2>/dev/null || { echo "Warning: No .wav files found in ../chapters."; }
+
+# Iterate over WAV files located *within* the target directory
+for file in "$TARGET_DIR"/*.wav; do
+    if [ -f "$file" ]; then
+        filename=$(basename "$file")
+        echo "Converting $filename to MP3..."
+        ffmpeg -i "$file" -b:a 32k "${file%.wav}.mp3"
+    fi
+done
+
+# Clean up original WAV files from the target directory
+rm -v "$TARGET_DIR"/*.wav 2>/dev/null || { echo "No .wav files to clean up in $TARGET_DIR."; }
 
 cp ../chapters/*.wav .
 for file in *.wav; do ffmpeg -i "$file" -b:a 32k "${file%.wav}.mp3"; done
