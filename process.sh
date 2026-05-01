@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail # Exit on error, treat unset variables as errors, and fail pipeline if any command fails
 #This is the master script that will convert the e-book into mp3 files.  You *should* just have to run this.
 
 
@@ -20,30 +21,31 @@ if [ ! -f "$1" ]; then
     echo "❌ Failure: '$1' does not exist or is not a regular file. Please check the path."
     exit 1
 fi
+echo "✅ Success: $1 is an existing file."
 
 #Remove and recreate the chapters directory
 rm -rf chapters
 mkdir chapters
 
-#Split the epub into text files by chapter
-python epub_to_chapters.py $1
-cd chapters
+# Split the epub into text files by chapter
+python epub_to_chapters.py "$1"
 
-for file in *; do
-    # Check if the item is a file (and not a directory)
+# Explicitly process files within 'chapters' directory without changing working directory (cd)
+for file in chapters/*; do
+    # Check if the item is a regular file and exists
     if [ -f "$file" ]; then
-        # echo "Processing $file ===> $voice_choice"
-        python ../batch.py "$file" "$voice_choice"
-        echo "󱔸 Processed the file, waiting for cooldown..."
+        echo "Processing $(basename "$file") ===> $voice_choice"
+        python batch.py "$file" "$voice_choice"
+        echo "󱔸 Processed the chapter, waiting for cooldown..."
         sleep 2
     fi
 done
-cd ..
 
 # NEXT -- MOVE TO A FOLDER AND CONVERT
 echo "󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈"
+# NEXT -- MOVE TO A FOLDER AND CONVERT
+echo "󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈"
 echo "Proccessing into wav files completed."
-
 
 # 1. Prompt and capture input safely
 read -p "What directory should this be placed in?:" user_input_dir
@@ -56,17 +58,14 @@ if [ -z "$user_input_dir" ]; then
    exit 1
 fi
 
-# Define the path we want to work in
-TARGET_DIR="./$user_input_dir"
+TARGET_DIR="./$user_input_dir" # Use local pathing relative to script execution location
 
 # 3. Attempt to create the directory AND check for errors (The critical fix)
-if mkdir -p "$TARGET_DIR"; then
-    echo "Successfully created/verified directory: $TARGET_DIR"
-else
-    # This block runs ONLY if mkdir fails (e.g., permissions denied, invalid path)
+if ! mkdir -p "$TARGET_DIR"; then
     echo "ERROR: Could not create directory '$user_input_dir'. Check permissions or name validity."
     exit 1
 fi
+echo "Successfully created/verified directory: $TARGET_DIR"
 
 # Perform all subsequent operations inside the target directory context without using 'cd' for movement.
 # Use subshell execution or explicit relative pathing to maintain script safety and clean state.
@@ -88,6 +87,4 @@ done
 # Clean up original WAV files from the target directory
 rm -v "$TARGET_DIR"/*.wav 2>/dev/null || { echo "No .wav files to clean up in $TARGET_DIR."; }
 
-cp ../chapters/*.wav .
-for file in *.wav; do ffmpeg -i "$file" -b:a 32k "${file%.wav}.mp3"; done
-rm *.wav
+echo "✅ Conversion process completed successfully within '$user_input_dir'."
