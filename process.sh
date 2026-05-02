@@ -57,19 +57,14 @@ if ! mkdir -p "$TARGET_DIR"; then
 fi
 echo "Successfully created/verified directory: $TARGET_DIR"
 
-# Perform all subsequent operations inside the target directory context without using 'cd' for movement.
-# Use subshell execution or explicit relative pathing to maintain script safety and clean state.
-
 echo "Moving into '$user_input_dir' context for final processing..."
 
 # Copy files from chapters directly into the new TARGET_DIR
-cp -v ../chapters/*.wav "$TARGET_DIR"/ 2>/dev/null || { echo "Warning: No .wav files found in ../chapters."; }
+cp -v ./chapters/*.wav "$TARGET_DIR"/ 2>/dev/null || { echo "Warning: No .wav files found in ./chapters."; }
 
-# Iterate over WAV files located *within* the target directory
 for file in "$TARGET_DIR"/*.wav; do
     if [ -f "$file" ]; then
         filename=$(basename "$file")
-        echo "Converting $filename to MP3..."
         ffmpeg -i "$file" -b:a 32k "${file%.wav}.mp3"
     fi
 done

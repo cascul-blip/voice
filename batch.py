@@ -1,24 +1,25 @@
-import requests
-import sys
 import os
+import sys
 from pathlib import Path
 
-def save_as_audio(text: str, output_file: str = "output.wav", voice: str = "am_michael"):
+import requests
+
+
+def save_as_audio(
+    text: str, output_file: str = "output.wav", voice: str = "am_michael"
+):
     """Convert text to speech and save as audio file."""
     response = requests.post(
         "http://127.0.0.1:8880/v1/audio/speech",
-        json={
-            "model": "tts-1",
-            "input": text,
-            "voice": voice
-        },
-        timeout=1200  # Increased timeout for longer files
+        json={"model": "tts-1", "input": text, "voice": voice},
+        timeout=1200,  # Increased timeout for longer files
     )
     response.raise_for_status()
 
     with open(output_file, "wb") as f:
         f.write(response.content)
     print(f"✅ Audio successfully saved to: {output_file}")
+
 
 def main():
     # Get input file from command line or ask user
@@ -54,6 +55,7 @@ def main():
 
     # Convert to audio
     save_as_audio(text, str(output_file), voice)
+
 
 if __name__ == "__main__":
     main()
