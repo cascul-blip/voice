@@ -21,28 +21,25 @@ if [ ! -f "$1" ]; then
     echo "❌ Failure: '$1' does not exist or is not a regular file. Please check the path."
     exit 1
 fi
-echo "✅ Success: $1 is an existing file."
 
 #Remove and recreate the chapters directory
 rm -rf chapters
 mkdir chapters
 
 # Split the epub into text files by chapter
+echo -e "────────── \033[1m Splitting chapters from the epub file \033[0m ────────────────────"
 python epub_to_chapters.py "$1"
-
+echo -e "────────── \033[1m Kokoro AI converting text to audio \033[0m ───────────────────────"
 for file in chapters/*; do
     # Check if the item is a regular file and not a directory
     if [ -f "$file" ]; then
-        echo "Processing $(basename "$file") ===> $voice_choice"
         python batch.py "$file" "$voice_choice"
-        echo "󱔸 Processed the chapter, waiting for cooldown..."
         sleep 2
     fi
 done
 
-echo "󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈󰗈"
-echo "Proccessing into wav files completed."
-read -p "What directory should this be placed in?:" user_input_dir
+echo -e "────────── \033[1m Transcription complete \033[0m ───────────────────────────────────"
+read -p "What directory do you want to save the mp3 files to?:" user_input_dir
 
 if [ -z "$user_input_dir" ]; then
    echo "Directory not entered, skipping conversion."
@@ -55,17 +52,15 @@ if ! mkdir -p "$TARGET_DIR"; then
     echo "ERROR: Could not create directory '$user_input_dir'. Check permissions or name validity."
     exit 1
 fi
-echo "Successfully created/verified directory: $TARGET_DIR"
-
-echo "Moving into '$user_input_dir' context for final processing..."
 
 # Copy files from chapters directly into the new TARGET_DIR
-cp -v ./chapters/*.wav "$TARGET_DIR"/ 2>/dev/null || { echo "Warning: No .wav files found in ./chapters."; }
+cp ./chapters/*.wav "$TARGET_DIR"/ 2>/dev/null || { echo "Warning: No .wav files found in ./chapters."; }
 
 for file in "$TARGET_DIR"/*.wav; do
     if [ -f "$file" ]; then
         filename=$(basename "$file")
-        ffmpeg -i "$file" -b:a 32k "${file%.wav}.mp3"
+        echo -e "Converting $file to .mp3"
+        ffmpeg -v 16 -i "$file" -b:a 32k "${file%.wav}.mp3"
     fi
 done
 
@@ -73,3 +68,4 @@ done
 rm -v "$TARGET_DIR"/*.wav 2>/dev/null || { echo "No .wav files to clean up in $TARGET_DIR."; }
 
 echo "✅ Conversion process completed successfully within '$user_input_dir'."
+notify-send "TTS Complete!"

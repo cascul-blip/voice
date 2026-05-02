@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-import sys
 import os
+import sys
+
 import ebooklib
-from ebooklib import epub
 from bs4 import BeautifulSoup
+from ebooklib import epub
+
 
 def _sanitize_filename_component(s: str, max_len: int = 80) -> str:
     s = (s or "").strip()
@@ -12,6 +14,7 @@ def _sanitize_filename_component(s: str, max_len: int = 80) -> str:
     s = "".join(c if c.isalnum() or c in " -_" else "_" for c in s)
     s = " ".join(s.split())
     return s[:max_len].strip(" ._-")
+
 
 def _iter_toc_entries(toc):
     """
@@ -29,6 +32,7 @@ def _iter_toc_entries(toc):
     if title and href:
         yield (str(title), str(href))
 
+
 def _build_href_title_map(book: epub.EpubBook) -> dict:
     href_to_title: dict[str, str] = {}
     for title, href in _iter_toc_entries(getattr(book, "toc", None)):
@@ -36,6 +40,7 @@ def _build_href_title_map(book: epub.EpubBook) -> dict:
         if href_base and href_base not in href_to_title:
             href_to_title[href_base] = title.strip()
     return href_to_title
+
 
 def extract_chapters(epub_path, output_dir="chapters"):
     if not os.path.exists(output_dir):
@@ -46,9 +51,15 @@ def extract_chapters(epub_path, output_dir="chapters"):
     used_filenames: set[str] = set()
 
     # Process documents in the order defined by the spine (reading order)
-    spine_ids = [idref for (idref, _linear) in getattr(book, "spine", []) if idref != "nav"]
+    spine_ids = [
+        idref for (idref, _linear) in getattr(book, "spine", []) if idref != "nav"
+    ]
     spine_items = [book.get_item_with_id(idref) for idref in spine_ids]
-    spine_items = [it for it in spine_items if it is not None and it.get_type() == ebooklib.ITEM_DOCUMENT]
+    spine_items = [
+        it
+        for it in spine_items
+        if it is not None and it.get_type() == ebooklib.ITEM_DOCUMENT
+    ]
 
     # Fallback if spine is missing/empty
     if not spine_items:
@@ -56,10 +67,10 @@ def extract_chapters(epub_path, output_dir="chapters"):
 
     for i, item in enumerate(spine_items):
         content = item.get_content()
-        soup = BeautifulSoup(content, 'html.parser')
+        soup = BeautifulSoup(content, "html.parser")
 
         # Extract clean text
-        text = soup.get_text(separator='\n', strip=True)
+        text = soup.get_text(separator="\n", strip=True)
 
         # Prefer EPUB TOC title for this document; fall back to headings/title tag; then numbering.
         chapter_title = None
@@ -78,11 +89,13 @@ def extract_chapters(epub_path, output_dir="chapters"):
                 chapter_title = title_tag.get_text(separator=" ", strip=True)
 
         if not chapter_title:
-            chapter_title = f"chapter_{i+1:03d}"
+            chapter_title = f"chapter_{i + 1:03d}"
 
         # Sanitize filename
-        safe_title = _sanitize_filename_component(chapter_title) or f"chapter_{i+1:03d}"
-        base = f"{i+1:03d}_{safe_title}"
+        safe_title = (
+            _sanitize_filename_component(chapter_title) or f"chapter_{i + 1:03d}"
+        )
+        base = f"{i + 1:03d}_{safe_title}"
         filename = f"{base}.txt"
         dedupe_n = 2
         while filename in used_filenames:
@@ -91,10 +104,11 @@ def extract_chapters(epub_path, output_dir="chapters"):
         used_filenames.add(filename)
 
         output_path = os.path.join(output_dir, filename)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(text)
 
         print(f"Extracted: {filename}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -102,4 +116,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     extract_chapters(sys.argv[1])
-    print(f"\nAll chapters have been extracted to the '{os.path.join(os.getcwd(), 'chapters')}' directory.")
+    # print(f"\nAll chapters have been extracted to the '{os.path.join(os.getcwd(), 'chapters')}' directory.")

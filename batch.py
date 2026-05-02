@@ -1,5 +1,5 @@
-import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -18,7 +18,10 @@ def save_as_audio(
 
     with open(output_file, "wb") as f:
         f.write(response.content)
-    print(f"✅ Audio successfully saved to: {output_file}")
+        now = datetime.now()
+        now_str = now.strftime("%H:%M:%S")
+        print(f"{now_str} \033[1m - Audio successfully saved to: {output_file} \033[0m")
+        print("")
 
 
 def main():
@@ -26,10 +29,12 @@ def main():
     if len(sys.argv) > 1:
         input_path = sys.argv[1]
     else:
-        input_path = input("Enter the path to your text file: ").strip()
+        print("❌ Error: File not passed through the command line!")
+        return
 
     input_path = Path(input_path)
 
+    # If this is being called through process.sh it should never fail
     if not input_path.exists():
         print(f"❌ Error: File '{input_path}' not found!")
         return
@@ -42,7 +47,8 @@ def main():
         print("❌ Error: The file is empty!")
         return
 
-    print(f"📖 Read {len(text)} characters from {input_path.name}")
+    # print(f"📖 Read {len(text)} characters from {input_path.name}")
+    print(f"Running TTS for {input_path.name}")
 
     # Generate output filename (same name as input but .wav)
     output_file = input_path.with_suffix(".wav")
